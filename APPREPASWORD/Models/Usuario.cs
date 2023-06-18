@@ -7,24 +7,23 @@ namespace APPREPASWORD.Models
     {
         public Usuario()
         {
-            
+            Historials = new HashSet<Historial>();
+            Repositorios = new HashSet<Repositorio>();
         }
 
         public int Id { get; set; }
         public string? Nombres { get; set; }
         public string? Apellidos { get; set; }
-        public int? Documento { get; set; }
+        public string? Documento { get; set; }
         public string? Cargo { get; set; }
-        public int? IdRol { get; set; }
-        public int? IdArea { get; set; }
+        public string? Rol { get; set; }
+        public string? Area { get; set; }
         public int? Telefono { get; set; }
         public string? Correo { get; set; }
-        public int? IdEstado { get; set; }
-        public int? Fecha { get; set; }
+        public string? Estado { get; set; }
+        public DateTime? Fecha { get; set; }
 
-        public virtual Area? IdAreaNavigation { get; set; }
-        public virtual Estado? IdEstadoNavigation { get; set; }
-        public virtual Rol? IdRolNavigation { get; set; }
-       
+        public virtual ICollection<Historial> Historials { get; set; }
+        public virtual ICollection<Repositorio> Repositorios { get; set; }
     }
 }

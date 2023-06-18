@@ -26,14 +26,8 @@ namespace APPREPASWORD.Controllers
         public async Task<ActionResult<IEnumerable<UsuariosMV>>> GetUsuarios()
         {
             var usuarios = await _context.Usuarios.ToListAsync();
-            var area = await _context.Areas.ToListAsync();
-            var rol = await _context.Rols.ToListAsync();
-            var estado = await _context.Estados.ToListAsync();
 
             var query = from usu in usuarios
-                        join are in area on usu.IdArea equals are.Id
-                        join ro in rol on usu.IdRol equals ro.Id
-                        join est in estado on usu.IdEstado equals est.Id
 
                         select new UsuariosMV
                         {
@@ -41,14 +35,14 @@ namespace APPREPASWORD.Controllers
                             Nombres = usu.Nombres,
                             Apellidos = usu.Apellidos,
                             Documento = usu.Documento,
-                            NombreArea = are.Nombre,
-                            Rol = ro.Nombre,
-                            Estado = est.Nombre,
+                            NombreArea = usu.Area,
+                            Rol = usu.Rol,
+                            Estado = usu.Estado,
                             Cargo = usu.Cargo,
                             Telefono = usu.Telefono,
                             Correo = usu.Correo,
                             Fecha = usu.Fecha,
-                      
+
                         };
 
             return query.ToList();
@@ -58,10 +52,10 @@ namespace APPREPASWORD.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Usuario>> GetUsuario(int id)
         {
-          if (_context.Usuarios == null)
-          {
-              return NotFound();
-          }
+            if (_context.Usuarios == null)
+            {
+                return NotFound();
+            }
             var usuario = await _context.Usuarios.FindAsync(id);
 
             if (usuario == null)
@@ -72,53 +66,110 @@ namespace APPREPASWORD.Controllers
             return usuario;
         }
 
-        // PUT: api/Usuarios/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        //to protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUsuario(int id, Usuario usuario)
+        public async Task<ActionResult<UsuariosMV>> PutUsuario(int id, UsuariosMV usuario)
         {
-            if (id != usuario.Id)
+            var usuarioexistente = await _context.Usuarios.FindAsync(id);
+
+            if (usuarioexistente == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(usuario).State = EntityState.Modified;
+            usuarioexistente.Nombres = usuario.Nombres;
+            usuarioexistente.Apellidos = usuario.Apellidos;
+            usuarioexistente.Documento = usuario.Documento;
+            usuarioexistente.Cargo = usuario.Cargo;
+            usuarioexistente.Correo = usuario.Correo;
+            usuarioexistente.Telefono = usuario.Telefono;
+            usuarioexistente.Fecha = usuario.Fecha;
+            usuarioexistente.Area = usuario.NombreArea;
+            usuarioexistente.Rol=usuario.Rol;
+            usuarioexistente.Estado= usuario.Estado;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UsuarioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
 
-            return NoContent();
-        }
-
-        // POST: api/Usuarios
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Usuario>> PostUsuario(Usuario usuario)
-        {
-          if (_context.Usuarios == null)
-          {
-              return Problem("Entity set 'APPREPASWORDContext.Usuarios'  is null.");
-          }
-            _context.Usuarios.Add(usuario);
+            // guardar los cambios en la base de datos
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUsuario", new { id = usuario.Id }, usuario);
+            // realizar los joins y obtener la información adicional
+            var query = from usu in _context.Usuarios
+                        where usu.Id == id
+                        select new UsuariosMV
+                        {
+                            Id = usu.Id,
+                            Nombres = usu.Nombres,
+                            Apellidos = usu.Apellidos,
+                            Documento = usu.Documento,
+                            NombreArea = usu.Area,
+                            Rol = usu.Rol,
+                            Estado = usu.Estado,
+                            Cargo = usu.Cargo,
+                            Telefono = usu.Telefono,
+                            Correo = usu.Correo,
+                            Fecha = usu.Fecha
+                        };
+
+            var usuarioactualizado = await query.FirstOrDefaultAsync();
+
+            return usuarioactualizado;
         }
 
-        // DELETE: api/Usuarios/5
+
+        [HttpPost]
+        public async Task<ActionResult<UsuariosMV>> PostUsuario(UsuariosMV usuario)
+        {
+            // Verificar si el usuario ya existe en la base de datos
+            var usuarioExistente = await _context.Usuarios.FirstOrDefaultAsync(u => u.Documento == usuario.Documento);
+            if (usuarioExistente != null)
+            {
+                // Devolver un error de conflicto si el usuario ya existe
+                return Conflict("El usuario ya existe en la base de datos.");
+            }
+
+            // Crear un nuevo objeto de tipo Usuario
+            var nuevoUsuario = new Usuario
+            {
+                Nombres = usuario.Nombres,
+                Apellidos = usuario.Apellidos,
+                Documento = usuario.Documento,
+                Cargo = usuario.Cargo,
+                Correo = usuario.Correo,
+                Telefono = usuario.Telefono,
+                Fecha = usuario.Fecha,
+                Area = usuario.NombreArea,
+                Rol = usuario.Rol,
+                Estado = usuario.Estado,
+            };
+
+            _context.Usuarios.Add(nuevoUsuario);
+            await _context.SaveChangesAsync();
+
+            // Realizar los joins y obtener la información adicional del usuario creado
+            var query = from usu in _context.Usuarios
+                        where usu.Id == nuevoUsuario.Id
+                        select new UsuariosMV
+                        {
+                            Id = usu.Id,
+                            Nombres = usu.Nombres,
+                            Apellidos = usu.Apellidos,
+                            Documento = usu.Documento,
+                            NombreArea = usu.Area,
+                            Rol = usu.Rol,
+                            Estado = usu.Estado,
+                            Cargo = usu.Cargo,
+                            Telefono = usu.Telefono,
+                            Correo = usu.Correo,
+                            Fecha = usu.Fecha
+                        };
+
+            var usuarioCreado = await query.FirstOrDefaultAsync();
+
+            // Devolver una respuesta de éxito (201 Created) con el usuario creado
+            return CreatedAtAction(nameof(GetUsuario), new { id = usuarioCreado.Id }, usuarioCreado);
+        }
+
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
@@ -144,3 +195,4 @@ namespace APPREPASWORD.Controllers
         }
     }
 }
+

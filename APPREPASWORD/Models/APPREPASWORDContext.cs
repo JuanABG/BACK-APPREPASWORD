@@ -16,15 +16,8 @@ namespace APPREPASWORD.Models
         {
         }
 
-        public virtual DbSet<Acceso> Accesos { get; set; } = null!;
-        public virtual DbSet<Ambiente> Ambientes { get; set; } = null!;
-        public virtual DbSet<Area> Areas { get; set; } = null!;
-        public virtual DbSet<Detalle> Detalles { get; set; } = null!;
-        public virtual DbSet<Estado> Estados { get; set; } = null!;
         public virtual DbSet<Historial> Historials { get; set; } = null!;
         public virtual DbSet<Repositorio> Repositorios { get; set; } = null!;
-        public virtual DbSet<Rol> Rols { get; set; } = null!;
-        public virtual DbSet<Servidor> Servidors { get; set; } = null!;
         public virtual DbSet<Usuario> Usuarios { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -38,68 +31,31 @@ namespace APPREPASWORD.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Acceso>(entity =>
-            {
-                entity.ToTable("Acceso");
-
-                entity.Property(e => e.Nombre).HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<Ambiente>(entity =>
-            {
-                entity.ToTable("Ambiente");
-
-                entity.Property(e => e.Nombre).HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<Area>(entity =>
-            {
-                entity.ToTable("Area");
-
-                entity.Property(e => e.Nombre).HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<Detalle>(entity =>
-            {
-                entity.ToTable("Detalle");
-
-                entity.Property(e => e.Detalle1)
-                    .HasMaxLength(50)
-                    .HasColumnName("Detalle");
-            });
-
-            modelBuilder.Entity<Estado>(entity =>
-            {
-                entity.ToTable("Estado");
-
-                entity.Property(e => e.Nombre).HasMaxLength(50);
-            });
-
             modelBuilder.Entity<Historial>(entity =>
             {
                 entity.ToTable("Historial");
 
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+                entity.Property(e => e.Acceso).HasMaxLength(50);
+
+                entity.Property(e => e.Ambiente).HasMaxLength(50);
 
                 entity.Property(e => e.Comentarios).HasMaxLength(50);
 
+                entity.Property(e => e.DetalleRegistro)
+                    .HasMaxLength(50)
+                    .HasColumnName("Detalle_Registro");
+
+                entity.Property(e => e.Estado).HasMaxLength(50);
+
                 entity.Property(e => e.FechaCreacionRegistro)
-                    .HasColumnType("date")
+                    .HasMaxLength(50)
                     .HasColumnName("Fecha_Creacion_Registro");
 
                 entity.Property(e => e.FechaNovedad)
                     .HasColumnType("date")
                     .HasColumnName("Fecha_Novedad");
 
-                entity.Property(e => e.IdAcceso).HasColumnName("Id_Acceso");
-
-                entity.Property(e => e.IdAmbiente).HasColumnName("Id_Ambiente");
-
-                entity.Property(e => e.IdDetalleRegistro).HasColumnName("Id_Detalle_Registro");
-
                 entity.Property(e => e.IdRegistro).HasColumnName("Id_Registro");
-
-                entity.Property(e => e.IdServidor).HasColumnName("Id_Servidor");
 
                 entity.Property(e => e.IdUsuario).HasColumnName("Id_Usuario");
 
@@ -111,43 +67,42 @@ namespace APPREPASWORD.Models
                     .HasMaxLength(50)
                     .HasColumnName("Ruta_Acceso");
 
+                entity.Property(e => e.Servidor).HasMaxLength(50);
+
                 entity.Property(e => e.Usuario).HasMaxLength(50);
 
-                entity.HasOne(d => d.IdNavigation)
-                    .WithOne(p => p.HistorialIdNavigation)
-                    .HasForeignKey<Historial>(d => d.Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Historial_Repositorio");
-
-                entity.HasOne(d => d.IdDetalleRegistroNavigation)
+                entity.HasOne(d => d.IdRegistroNavigation)
                     .WithMany(p => p.Historials)
-                    .HasForeignKey(d => d.IdDetalleRegistro)
-                    .HasConstraintName("FK_Historial_Detalle");
+                    .HasForeignKey(d => d.IdRegistro)
+                    .HasConstraintName("FK_Historial_Repositorios");
 
-      
+                entity.HasOne(d => d.IdUsuarioNavigation)
+                    .WithMany(p => p.Historials)
+                    .HasForeignKey(d => d.IdUsuario)
+                    .HasConstraintName("FK_Historial_Usuario");
             });
 
             modelBuilder.Entity<Repositorio>(entity =>
             {
                 entity.HasKey(e => e.IdRepositorio);
 
-                entity.ToTable("Repositorio");
-
                 entity.Property(e => e.IdRepositorio).HasColumnName("Id_Repositorio");
 
+                entity.Property(e => e.Acceso).HasMaxLength(50);
+
+                entity.Property(e => e.Ambiente).HasMaxLength(50);
+
                 entity.Property(e => e.Contraseña).HasMaxLength(50);
+
+                entity.Property(e => e.DetalleRegistro)
+                    .HasMaxLength(50)
+                    .HasColumnName("Detalle_Registro");
+
+                entity.Property(e => e.Estado).HasMaxLength(50);
 
                 entity.Property(e => e.FechaCreacionRegistro)
                     .HasColumnType("date")
                     .HasColumnName("Fecha_Creacion_Registro");
-
-                entity.Property(e => e.IdAcceso).HasColumnName("Id_Acceso");
-
-                entity.Property(e => e.IdAmbiente).HasColumnName("Id_Ambiente");
-
-                entity.Property(e => e.IdDetalleRegistro).HasColumnName("Id_Detalle_Registro");
-
-                entity.Property(e => e.IdServidor).HasColumnName("Id_Servidor");
 
                 entity.Property(e => e.IdUsuario).HasColumnName("Id_Usuario");
 
@@ -159,43 +114,14 @@ namespace APPREPASWORD.Models
                     .HasMaxLength(50)
                     .HasColumnName("Ruta_Acceso");
 
+                entity.Property(e => e.Servidor).HasMaxLength(50);
+
                 entity.Property(e => e.Usuario).HasMaxLength(50);
 
-                entity.HasOne(d => d.IdAccesoNavigation)
+                entity.HasOne(d => d.IdUsuarioNavigation)
                     .WithMany(p => p.Repositorios)
-                    .HasForeignKey(d => d.IdAcceso)
-                    .HasConstraintName("FK_Repositorio_Acceso");
-
-                entity.HasOne(d => d.IdAmbienteNavigation)
-                    .WithMany(p => p.Repositorios)
-                    .HasForeignKey(d => d.IdAmbiente)
-                    .HasConstraintName("FK_Repositorio_Ambiente");
-
-                entity.HasOne(d => d.IdDetalleRegistroNavigation)
-                    .WithMany(p => p.Repositorios)
-                    .HasForeignKey(d => d.IdDetalleRegistro)
-                    .HasConstraintName("FK_Repositorio_Detalle");
-
-                entity.HasOne(d => d.IdServidorNavigation)
-                    .WithMany(p => p.Repositorios)
-                    .HasForeignKey(d => d.IdServidor)
-                    .HasConstraintName("FK_Repositorio_Servidor");
-
-
-            });
-
-            modelBuilder.Entity<Rol>(entity =>
-            {
-                entity.ToTable("Rol");
-
-                entity.Property(e => e.Nombre).HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<Servidor>(entity =>
-            {
-                entity.ToTable("Servidor");
-
-                entity.Property(e => e.Nombre).HasMaxLength(50);
+                    .HasForeignKey(d => d.IdUsuario)
+                    .HasConstraintName("FK_Repositorios_Usuario");
             });
 
             modelBuilder.Entity<Usuario>(entity =>
@@ -204,32 +130,21 @@ namespace APPREPASWORD.Models
 
                 entity.Property(e => e.Apellidos).HasMaxLength(50);
 
+                entity.Property(e => e.Area).HasMaxLength(50);
+
                 entity.Property(e => e.Cargo).HasMaxLength(50);
 
                 entity.Property(e => e.Correo).HasMaxLength(50);
 
-                entity.Property(e => e.IdArea).HasColumnName("Id_Area");
+                entity.Property(e => e.Documento).HasMaxLength(50);
 
-                entity.Property(e => e.IdEstado).HasColumnName("Id_Estado");
+                entity.Property(e => e.Estado).HasMaxLength(50);
 
-                entity.Property(e => e.IdRol).HasColumnName("Id_Rol");
+                entity.Property(e => e.Fecha).HasColumnType("date");
 
                 entity.Property(e => e.Nombres).HasMaxLength(50);
 
-                entity.HasOne(d => d.IdAreaNavigation)
-                    .WithMany(p => p.Usuarios)
-                    .HasForeignKey(d => d.IdArea)
-                    .HasConstraintName("FK_Usuario_Area");
-
-                entity.HasOne(d => d.IdEstadoNavigation)
-                    .WithMany(p => p.Usuarios)
-                    .HasForeignKey(d => d.IdEstado)
-                    .HasConstraintName("FK_Usuario_Estado");
-
-                entity.HasOne(d => d.IdRolNavigation)
-                    .WithMany(p => p.Usuarios)
-                    .HasForeignKey(d => d.IdRol)
-                    .HasConstraintName("FK_Usuario_Rol");
+                entity.Property(e => e.Rol).HasMaxLength(50);
             });
 
             OnModelCreatingPartial(modelBuilder);

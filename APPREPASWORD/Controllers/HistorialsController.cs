@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using APPREPASWORD.Models;
 using APPREPASWORD.ModelView;
+using NuGet.Protocol.Core.Types;
 
 namespace APPREPASWORD.Controllers
 {
@@ -28,46 +29,33 @@ namespace APPREPASWORD.Controllers
             var historial = await _context.Historials.ToListAsync();
             var repositorio = await _context.Repositorios.ToListAsync();
             var usuario = await _context.Usuarios.ToListAsync();
-            var acceso = await _context.Accesos.ToListAsync();
-            var ambiente = await _context.Ambientes.ToListAsync();
-            var servidor = await _context.Servidors.ToListAsync();
-            var detalle = await _context.Detalles.ToListAsync();
-            var area = await _context.Areas.ToListAsync();
-            var rol = await _context.Rols.ToListAsync();
-            var estado = await _context.Estados.ToListAsync();
+  
 
             var query = from hist in historial
-                        join repo in repositorio on hist.Usuario equals repo.Usuario
+                        join repo in repositorio on hist.IdRegistro equals repo.IdRepositorio
                         join usu in usuario on hist.IdUsuario equals usu.Id
-                        join acce in acceso on hist.IdAcceso equals acce.Id
-                        join amb in ambiente on hist.IdAmbiente equals amb.Id
-                        join ser in servidor on hist.IdServidor equals ser.Id
-                        join det in detalle on hist.IdDetalleRegistro equals det.Id
-                        join are in area on hist.Id equals are.Id
-                        join ro in rol on hist.Id equals ro.Id
-                        join est in estado on hist.Id equals est.Id
 
                         select new HistorialMV
                         {
                             Id = hist.Id,
                             FechaNovedad = hist.FechaNovedad,
-                            IdRepositorio = hist.IdRegistro,
+                            IdRepositorio = repo.IdRepositorio,
                             FechaCreacionRegistro = repo.FechaCreacionRegistro,
                             Nombres = usu.Nombres,
                             Apellidos = usu.Apellidos,
                             Documento = usu.Documento,
                             Cargo = usu.Cargo,
-                            Rol = ro.Nombre,
-                            NombreArea = are.Nombre,
-                            Estado = est.Nombre,
-                            Acceso = acce.Nombre,
-                            Ambiente = amb.Nombre,
-                            Servidor =ser.Nombre,
+                            Rol = usu.Rol,
+                            NombreArea = usu.Area,                  
+                            Acceso = repo.Acceso,
+                            Ambiente = repo.Ambiente,
+                            Servidor =repo.Servidor,
                             RutaAcceso = repo.RutaAcceso,
                             Usuario = repo.Usuario,
                             NombreAcceso = repo.NombreAcceso,
-                            DetalleRegistro = det.Detalle1,
-                            Comentarios = hist.Comentarios
+                            DetalleRegistro = repo.DetalleRegistro,
+                            Comentarios = hist.Comentarios,
+                            Estado = usu.Estado,
 
                         };
 
@@ -95,32 +83,51 @@ namespace APPREPASWORD.Controllers
         // PUT: api/Historials/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutHistorial(int id, Historial historial)
+        public async Task<ActionResult<HistorialMV>> PutRepositorio(int id, HistorialMV historial)
         {
-            if (id != historial.Id)
+            var historialExistente = await _context.Historials.FindAsync(id);
+
+            if (historialExistente == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(historial).State = EntityState.Modified;
+            historialExistente.FechaNovedad = historial.FechaNovedad;
+            historialExistente.IdRegistro = historial.IdRepositorio;
+            historialExistente.Comentarios = historial.Comentarios;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!HistorialExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            // Guardar los cambios en la base de datos
+            await _context.SaveChangesAsync();
 
-            return NoContent();
+            var query = from hist in _context.Historials
+                        join repo in _context.Repositorios on hist.Usuario equals repo.Usuario
+                        join usu in _context.Usuarios on hist.IdUsuario equals usu.Id
+               
+                        select new HistorialMV
+                        {
+                            Id = hist.Id,
+                            FechaNovedad = hist.FechaNovedad,
+                            IdRepositorio = repo.IdRepositorio,
+                            FechaCreacionRegistro = repo.FechaCreacionRegistro,
+                            Nombres = usu.Nombres,
+                            Apellidos = usu.Apellidos,
+                            Documento = usu.Documento,
+                            Cargo = usu.Cargo,
+                            Rol = usu.Rol,
+                            NombreArea = usu.Area,
+                            Acceso = repo.Acceso,
+                            Ambiente = repo.Ambiente,
+                            Servidor = repo.Servidor,
+                            RutaAcceso = repo.RutaAcceso,
+                            Usuario = repo.Usuario,
+                            NombreAcceso = repo.NombreAcceso,
+                            DetalleRegistro = repo.DetalleRegistro,
+                            Comentarios = hist.Comentarios,
+                            Estado = usu.Estado,
+                        };
+            var historialActualizado = await query.FirstOrDefaultAsync();
+
+            return historialActualizado;
         }
 
         // POST: api/Historials

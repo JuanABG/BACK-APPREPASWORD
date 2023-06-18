@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using APPREPASWORD.Models;
 using APPREPASWORD.ModelView;
+using System.Runtime.ConstrainedExecution;
 
 namespace APPREPASWORD.Controllers
 {
@@ -27,33 +28,27 @@ namespace APPREPASWORD.Controllers
         {
             var repositorio = await _context.Repositorios.ToListAsync();
             var usuario = await _context.Usuarios.ToListAsync();
-            var acceso = await _context.Accesos.ToListAsync();
-            var ambiente = await _context.Ambientes.ToListAsync();
-            var servidor = await _context.Servidors.ToListAsync();
-            var detalle = await _context.Detalles.ToListAsync();
 
             var query = from repo in repositorio
                         join usu in usuario on repo.IdUsuario equals usu.Id
-                        join acce in acceso on repo.IdAcceso equals acce.Id
-                        join amb in ambiente on repo.IdAmbiente equals amb.Id
-                        join ser in servidor on repo.IdServidor equals ser.Id
-                        join det in detalle on repo.IdDetalleRegistro equals det.Id
 
                         select new RepositorioMV
                         {
                             IdRepositorio = repo.IdRepositorio,
                             FechaCreacionRegistro = repo.FechaCreacionRegistro,
-                            Nombres  = usu.Nombres,
+                            Nombres = usu.Nombres,
                             Apellidos = usu.Apellidos,
                             Documento = usu.Documento,
-                            Acceso = acce.Nombre,
-                            Ambiente = amb.Nombre,
-                            Servidor = ser.Nombre,
+                            Acceso = repo.Acceso,
+                            Ambiente = repo.Ambiente,
+                            Servidor = repo.Servidor,
                             NombreAcceso = repo.NombreAcceso,
                             Usuario = repo.Usuario,
                             Contraseña = repo.Contraseña,
                             RutaAcceso = repo.RutaAcceso,
-                            DetalleRegistro = det.Detalle1,
+                            DetalleRegistro = repo.DetalleRegistro,
+                            Estado = repo.Estado,
+                            
 
                         };
 
@@ -78,75 +73,96 @@ namespace APPREPASWORD.Controllers
             return repositorio;
         }
 
-        // PUT: api/Repositorios/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRepositorio(int id, Repositorio repositorio)
+        public async Task<ActionResult<RepositorioMV>> PutRepositorio(int id, RepositorioMV repositorio)
         {
-            if (id != repositorio.IdRepositorio)
-            {
-                return BadRequest();
-            }
+            var repositorioExistente = await _context.Repositorios.FindAsync(id);
 
-            _context.Entry(repositorio).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!RepositorioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/Repositorios
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Repositorio>> PostRepositorio(Repositorio repositorio)
-        {
-          if (_context.Repositorios == null)
-          {
-              return Problem("Entity set 'APPREPASWORDContext.Repositorios'  is null.");
-          }
-            _context.Repositorios.Add(repositorio);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetRepositorio", new { id = repositorio.IdRepositorio }, repositorio);
-        }
-
-        // DELETE: api/Repositorios/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRepositorio(int id)
-        {
-            if (_context.Repositorios == null)
-            {
-                return NotFound();
-            }
-            var repositorio = await _context.Repositorios.FindAsync(id);
-            if (repositorio == null)
+            if (repositorioExistente == null)
             {
                 return NotFound();
             }
 
-            _context.Repositorios.Remove(repositorio);
+            repositorioExistente.FechaCreacionRegistro = repositorio.FechaCreacionRegistro;
+            repositorioExistente.NombreAcceso = repositorio.NombreAcceso;
+            repositorioExistente.Usuario = repositorio.Usuario;
+            repositorioExistente.Contraseña = repositorio.Contraseña;
+            repositorioExistente.RutaAcceso = repositorio.RutaAcceso;
+            repositorioExistente.Acceso = repositorio.Acceso;
+            repositorioExistente.Ambiente = repositorio.Ambiente;
+            repositorioExistente.Servidor = repositorio.Servidor;
+            repositorioExistente.DetalleRegistro = repositorio.DetalleRegistro;
+
+
+            // Guardar los cambios en la base de datos
             await _context.SaveChangesAsync();
 
-            return NoContent();
+
+
+            var query = from repo in _context.Repositorios
+                        join usu in _context.Usuarios on repo.IdUsuario equals usu.Id
+                        where repo.IdRepositorio == id
+                        select new RepositorioMV
+                        {
+                            IdRepositorio = repo.IdRepositorio,
+                            FechaCreacionRegistro = repo.FechaCreacionRegistro,
+                            Nombres = usu.Nombres,
+                            Apellidos = usu.Apellidos,
+                            Documento = usu.Documento,
+                            Acceso = repo.Acceso,
+                            Ambiente = repo.Ambiente,
+                            Servidor = repo.Servidor,
+                            NombreAcceso = repo.NombreAcceso,
+                            Usuario = repo.Usuario,
+                            Contraseña = repo.Contraseña,
+                            RutaAcceso = repo.RutaAcceso,
+                            DetalleRegistro = repo.DetalleRegistro,
+                            Estado = repo.Estado
+                        };
+            var repositorioActualizado = await query.FirstOrDefaultAsync();
+
+            return repositorioActualizado;
         }
 
-        private bool RepositorioExists(int id)
-        {
-            return (_context.Repositorios?.Any(e => e.IdRepositorio == id)).GetValueOrDefault();
-        }
+
+        //// POST: api/Repositorios
+        //// To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        //[HttpPost]
+        //public async Task<ActionResult<Repositorio>> PostRepositorio(Repositorio repositorio)
+        //{
+        //  if (_context.Repositorios == null)
+        //  {
+        //      return Problem("Entity set 'APPREPASWORDContext.Repositorios'  is null.");
+        //  }
+        //    _context.Repositorios.Add(repositorio);
+        //    await _context.SaveChangesAsync();
+
+        //    return CreatedAtAction("GetRepositorio", new { id = repositorio.IdRepositorio }, repositorio);
+        //}
+
+        //// DELETE: api/Repositorios/5
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> DeleteRepositorio(int id)
+        //{
+        //    if (_context.Repositorios == null)
+        //    {
+        //        return NotFound();
+        //    }
+        //    var repositorio = await _context.Repositorios.FindAsync(id);
+        //    if (repositorio == null)
+        //    {
+        //        return NotFound();
+        //    }
+
+        //    _context.Repositorios.Remove(repositorio);
+        //    await _context.SaveChangesAsync();
+
+        //    return NoContent();
+        //}
+
+        //private bool RepositorioExists(int id)
+        //{
+        //    return (_context.Repositorios?.Any(e => e.IdRepositorio == id)).GetValueOrDefault();
+        //}
     }
 }
